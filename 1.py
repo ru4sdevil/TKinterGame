@@ -25,7 +25,7 @@ canvas = tk.Canvas(master, bg='blue', height = step*N_X, width = step*N_Y)
 
 player = Player('green')
 player.draw()
-exit_q = Player('yellow')
+exit_q = Player('red')
 exit_q.draw()
 canvas.pack()
 master.mainloop()
