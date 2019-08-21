@@ -67,6 +67,7 @@ def add_enemies():
         enemy = Enemy()
         enemies_s.append(enemy)
     
+
         
         
 master = tk.Tk()
