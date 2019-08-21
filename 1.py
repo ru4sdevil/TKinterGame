@@ -1,29 +1,37 @@
 import tkinter as tk
 import random
 
-def random_pos(top):
-    return random.randint(1, top-1)*step
-
 class Player:
 
     def __init__(this, color):
-        this.x = random_pos(N_X)
-        this.y = random_pos(N_Y)
+        this.x = this.random_pos(N_X)
+        this.y = this.random_pos(N_Y)
         this.color = color
+        this.draw()
 
     def draw(this):
         this.body = canvas.create_oval((this.x, this.y), (this.x+step, this.y+step), fill = this.color)
         
-    def random_pos(top):
+    def random_pos(this, top):
         return random.randint(1, top-1)*step
 
     def repaint(this, x, y):
         canvas.move(this.body, x, y)
 
+class Exit(Player):
+    def __init__(this):
+        super().__init__("yellow")
+
+class Enemy(Player):
+    def __init__(this):
+        super().__init__('red')
+
+class Hero(Player):
+    def __init__(this):
+        super().__init__('green')
     def check_pos(this, other):
         return ((this.x == other.x) and (this.y == other.y))
-        
-        
+    
 def keypress(event):
     
     print(event)
@@ -53,17 +61,24 @@ def endgame():
     if player.check_pos(exit_q):
         print('GAME OVER')
         print('YOU WON!!!')
+
+def add_enemies():
+    for i in range(6):
+        enemy = Enemy()
+        enemies_s.append(enemy)
+    
+        
         
 master = tk.Tk()
 step = 60
 N_X = 10
 N_Y = 10
+enemies_s = []
 canvas = tk.Canvas(master, bg='blue', height = step*N_X, width = step*N_Y)
 
-player = Player('green')
-player.draw()
-exit_q = Player('yellow')
-exit_q.draw()
+add_enemies()
+player = Hero()
+exit_q = Exit()
 canvas.pack()
 master.bind('<KeyPress>', keypress)
 master.mainloop()
