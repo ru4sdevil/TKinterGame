@@ -55,42 +55,19 @@ def keypress(event):
         player.y += step
         player.repaint(0, step)
         #down
-
-    for enemy in enemies_d:
-        if event.keycode == 37 or event.keycode == 38 or event.keycode == 39 or event.keycode == 40 or event.keycode == 65 or event.keycode == 68 or event.keycode == 83 or event.keycode == 87:
-            p = random.randrange(1,4)
-            if p == 1:
-                enemy.y -= step
-                enemy.repaint(0, -step)
-                #up
-            elif p == 2:
-                enemy.y += step
-                enemy.repaint(0, step)
-                #down
-            elif p == 3:
-                enemy.x -= step
-                enemy.repaint(-step, 0)
-                #left
-            elif p == 4:
-                enemy.x -= step
-                enemy.repaint(step, 0)
-                #right
     endgame()
 
-
+def endgame():
+    if player.check_pos(exit_q):
+        print('GAME OVER')
+        print('YOU WON!!!')
 
 def add_enemies():
     for i in range(6):
         enemy = Enemy()
         enemies_s.append(enemy)
-    for i in range(3):
-        enemy = Enemy()
-        enemies_d.append(enemy)
     
-def endgame():
-    if player.check_pos(exit_q):
-        print('GAME OVER')
-        print('YOU WON!!!')
+
         
         
 master = tk.Tk()
@@ -98,7 +75,6 @@ step = 60
 N_X = 10
 N_Y = 10
 enemies_s = []
-enemies_d = []
 canvas = tk.Canvas(master, bg='blue', height = step*N_X, width = step*N_Y)
 
 add_enemies()
