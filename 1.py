@@ -22,11 +22,12 @@ class Player:
 
     def repaint(this, x, y):
         old_x,old_y = this.x,this.y
-        this.x =(this.x+x)%(step*N_X)
-        this.y =(this.y+y)%(step*N_Y)
+        this.x = (this.x+x)%(step*N_X)
+        this.y = (this.y+y)%(step*N_Y)
         canvas.move(this.body, (this.x- old_x), (this.y - old_y))
 
 class Exit(Player):
+
     def __init__(this):
         super().__init__("yellow")
 
@@ -54,10 +55,16 @@ class EnemyD(Enemy):
             super().repaint(step, 0)
             #right
 
+class SuperEnemy(Enemy):
+
+    def __init__(this):
+        super().__init__('violet')
+
 class Hero(Player):
+
     def __init__(this):
         super().__init__('green')
-        
+
     def check_pos(this, other):
         return ((this.x == other.x) and (this.y == other.y))
     
@@ -74,18 +81,26 @@ def key_listener(key):
     
     if key == 38 or key == 87:
         player.repaint(0, - step)
+        for enemy in super_enemies:
+            enemy.repaint(0, - step * 2)
         #up
             
     elif key == 39 or key == 68:
         player.repaint(step, 0)
+        for enemy in super_enemies:
+            enemy.repaint(step * 2, 0)
         #right
             
     elif key == 37 or key == 65:
-        player.repaint(- step, 0)
+        player.repaint(- step * 2, 0)
+        for enemy in super_enemies:
+            enemy.repaint(- step * 2, 0)
         #left
             
     elif key == 40 or key == 83:
         player.repaint(0, step)
+        for enemy in super_enemies:
+            enemy.repaint(0, step * 2)
         #down
 
 def enemies_step():
@@ -96,7 +111,8 @@ def endgame():
     if player.check_pos(exit_q):
         print('GAME OVER')
         print('YOU WON!!!')
-    enemies = enemies_d+enemies_s
+        
+    enemies = enemies_d+enemies_s+super_enemies
     for enemy in enemies:
         if player.check_pos(enemy):
             print('GAME OVER')
@@ -110,13 +126,17 @@ def add_enemies():
     for i in range(3):
         enemy = EnemyD()
         enemies_d.append(enemy)
+    for i in range(2):
+        enemy = SuperEnemy()
+        super_enemies.append(enemy)
 
 master = tk.Tk()
 step = 60
-N_X = 11
-N_Y = 11
+N_X = 12
+N_Y = 12
 enemies_s = []
 enemies_d = []
+super_enemies = []
 canvas = tk.Canvas(master, bg='blue', height = step*N_X, width = step*N_Y)
 
 add_enemies()
