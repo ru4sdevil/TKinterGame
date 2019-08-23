@@ -1,6 +1,31 @@
 import tkinter as tk
 import random
 
+class Wall:
+
+    def __init__(this, color = 'blue'):
+        this.x, this.y = -1,-1
+        while (this.x, this.y) in Player.objects:
+            this.x = this.random_pos(N_X)
+            this.y = this.random_pos(N_Y)
+        Player.objects.add((this.x, this.y))
+        this.color = color
+        this.draw()
+
+    def draw(this):
+        
+        this.body = canvas.create_rectangle((this.x, this.y), (this.x+step, this.y+step), fill = this.color)
+        
+    def random_pos(this, top):
+        return random.randint(1, top-1)*step
+
+class Exit(Wall):
+
+    def __init__(this):
+        super().__init__("yellow")
+
+    
+
 class Player:
 
     objects = {(-1,-1)}
@@ -26,10 +51,6 @@ class Player:
         this.y = (this.y+y)%(step*N_Y)
         canvas.move(this.body, (this.x- old_x), (this.y - old_y))
 
-class Exit(Player):
-
-    def __init__(this):
-        super().__init__("yellow")
 
 class Enemy(Player):
     def __init__(this, color='red'):
@@ -92,7 +113,7 @@ def key_listener(key):
         #right
             
     elif key == 37 or key == 65:
-        player.repaint(- step * 2, 0)
+        player.repaint(- step, 0)
         for enemy in super_enemies:
             enemy.repaint(- step * 2, 0)
         #left
@@ -131,14 +152,16 @@ def add_enemies():
         super_enemies.append(enemy)
 
 master = tk.Tk()
-step = 60
-N_X = 12
-N_Y = 12
+step = 30
+N_X = 20
+N_Y = 11
 enemies_s = []
 enemies_d = []
 super_enemies = []
-canvas = tk.Canvas(master, bg='blue', height = step*N_X, width = step*N_Y)
+canvas = tk.Canvas(master, bg='black', height = step*N_Y, width = step*N_X)
 
+for i in range(44):
+    wall = Wall()
 add_enemies()
 player = Hero()
 exit_q = Exit()
