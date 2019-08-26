@@ -130,8 +130,6 @@ class Maze:
                         object_l.x, object_r.x = object_r.x, object_l.x
                         object_l.y, object_r.y = object_r.y, object_l.y
                         object_l.color, object_r.color = object_r.color, object_l.color
-        for object_l in Maze.objects:
-            print(object_l.x,object_l.y)
 
     def unique(this):
         for i in range(1, len(Maze.objects)):
@@ -142,36 +140,48 @@ class Maze:
     def checking(this):
         t_x = 1
         t_y = N_Y - 2
+        p_x = t_x
+        p_y = t_y
         s = 0
         while s < 50:
-            print('check iter =',s,t_x,t_y)    
+            print('check iter =',s,t_x,t_y)
             canvas.create_rectangle((t_x * step + 10, t_y * step + 10), ((t_x + 1) * step - 10, (t_y + 1) * step - 10), fill = 'teal')
+            if t_x == N_X - 2 and t_y == 1:
+                break
             s += 1
-            if this.found_object(t_x + 1, t_y) == -1:
-                if this.cross(t_x + 1,t_y) == False:
-                    t_x = t_x + 1
-                    continue
-            elif this.found_object(t_x, t_y + 1) == -1:
-                if this.cross(t_x,t_y + 1) == False:
-                    t_y = t_y + 1
-                    continue
-            elif this.found_object(t_x, t_y - 1) == -1:
-                if this.cross(t_x,t_y - 1) == False:
-                    t_y = t_y - 1
-                    continue
-            print('chectry',t_x,t_y)    
-            if this.try_break(t_x +1, t_y) == True:
+            
+            if this.found_object(t_x + 1, t_y) == -1 and this.cross(t_x + 1,t_y) == False and t_x + 1 != p_x:
+                p_x = t_x
+                p_y = t_y                
                 t_x = t_x + 1
                 continue
-            elif this.try_break(t_x, t_y + 1) == True:
-                t_y = t_y + 1
-                continue
-            elif this.try_break(t_x, t_y - 1) == True:
+            if this.found_object(t_x, t_y - 1) == -1 and this.cross(t_x,t_y - 1) == False and t_y - 1 != p_y:
+                p_x = t_x
+                p_y = t_y                
                 t_y = t_y - 1
                 continue
-        
-#            if t_x == N_X - 1 and t_y == 1:
-##                break
+            if this.found_object(t_x, t_y + 1) == -1 and this.cross(t_x,t_y + 1) == False and t_y + 1 != p_y:
+                p_x = t_x
+                p_y = t_y                
+                t_y = t_y + 1
+                continue
+            print('chectry',t_x,t_y)    
+            if this.try_break(t_x +1, t_y) == True:
+                p_x = t_x
+                p_y = t_y                
+                t_x = t_x + 1
+                continue
+            elif this.try_break(t_x, t_y - 1) == True:
+                p_x = t_x
+                p_y = t_y
+                t_y = t_y - 1
+                continue
+            elif this.try_break(t_x, t_y + 1) == True:
+                p_x = t_x
+                p_y = t_y
+                t_y = t_y + 1
+                continue
+        print('end iter =',s)     
         
 maze = Maze()
 
