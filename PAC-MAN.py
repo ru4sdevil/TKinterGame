@@ -301,8 +301,8 @@ def timerevent():
     pacman.tick()
 
 
-img_c = PhotoImage(file="d:\pacman_c.gif")
-img_o = PhotoImage(file="d:\pacman_o.gif")
+img_c = PhotoImage(file="..\TKinterGame\pacman_c.gif")
+img_o = PhotoImage(file="..\TKinterGame\pacman_o.gif")
         
 maze = Maze()
 pacman = Pac_Man(1, N_Y - 2)
