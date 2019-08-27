@@ -8,7 +8,6 @@ colors = ['blue', 'green', 'yellow', 'red', 'orange', 'white']
 
 density = 0.3
 
-
 master = tk.Tk()
 
 screen_width = master.winfo_screenwidth()
@@ -16,7 +15,6 @@ screen_height = master.winfo_screenheight()
 
 N_Y = int(screen_height*0.8/step)
 N_X = int(screen_width*0.8/step)
-
 
 global img_c,img_o
 
@@ -29,22 +27,37 @@ class Moving_object:
 
 class Pac_Man(Moving_object):
 
-    shut = False
+    shut = True
+    command = 0
 
     def __init__(this, x = False, y = False):
         super().__init__(x, y)
 
-    def tick(this):
+    def reset(this):
+        this.shut = True
         this.undraw()
-        this.shut = not this.shut
+        this.x = 1
+        this.y = N_Y - 2
         this.draw()
 
+    def finished(this):
+        if this.x >= N_X - 2 and this.y == 1:
+            return True
+        return False
+
+    def tick(this):
+        if this.finished():
+            game.next_level()
+        else:
+            this.undraw()
+            this.shut = not this.shut
+            this.draw()
 
     def draw(this):
         if this.shut == True:
-            canvas.create_image(this.x * step, this.y * step, anchor=NW, image=img_c)
+            canvas.create_image(this.x * step, this.y * step, anchor=NW, image = img_c[this.command])
         else:
-            canvas.create_image(this.x * step, this.y * step, anchor=NW, image=img_o)
+            canvas.create_image(this.x * step, this.y * step, anchor=NW, image = img_o[this.command])
 
             
     def undraw(this):
@@ -56,53 +69,90 @@ class Pac_Man(Moving_object):
             if maze.found_object(this.x + 1, this.y) == -1 and maze.cross(this.x + 1,this.y) == False:               
                 this.undraw()
                 this.x = this.x + 1
+                this.command = 0
                 this.draw()
             #right
         elif command == 1:
             if maze.found_object(this.x, this.y - 1) == -1 and maze.cross(this.x, this.y - 1) == False:                
                 this.undraw()
                 this.y = this.y - 1
+                this.command = 1
                 this.draw()
             #up
         elif command == 2:
             if maze.found_object(this.x, this.y + 1) == -1 and maze.cross(this.x, this.y + 1) == False:                
                 this.undraw()
                 this.y = this.y + 1
+                this.command = 2
                 this.draw()
             #down
         elif command == 3:
             if maze.found_object(this.x - 1, this.y) == -1 and maze.cross(this.x - 1,this.y) == False:               
                 this.undraw()
                 this.x = this.x - 1
+                this.command = 3
                 this.draw()
             #left
-
     
 class Game:
 
-    def __init__(this):
-         pass
+    started = False
+    level = 1
+    score = 0
 
-    def timer(this):
+    def __init__(this):
         pass
 
+    def reset(this):
+        t = canvas.create_text(int(N_X*step/2),0,fill='red',font='Arial 20',anchor=NE, text=f'Level {this.level}  ')
+        print(canvas.bbox(t))
+        t = canvas.create_text(int(N_X*step/2),0,fill='red',font='Arial 20',anchor=NW, text=f'Score {this.score}  ')
+        print(canvas.bbox(t))
+    
+    def next_level(this):
+        this.started = False
+        #увеличить параметры уровня
+        this.level += 1
+        canvas.create_rectangle((0,0), (N_X * step, N_Y * step), fill = 'black') 
+        maze.reset()
+        pacman.reset()
+        this.reset()
+    
+    def timer(this):
+        if this.started:
+            pacman.tick()
+          
+
     def key_listener(this,key):
-        
-        if key == 38 or key == 87:
-            pacman.move(1)
-            #up
-                
-        if key == 39 or key == 68:
-            pacman.move(0)
-            #right
-                
-        if key == 37 or key == 65:
-            pacman.move(3)
-            #left
-                
-        if key == 40 or key == 83:
-            pacman.move(2)
-            #ascii
+
+        if key == 13:
+            if not this.started:
+                this.started = True
+                print('game started')
+
+        if this.started: 
+            if key == 27:
+                if this.started:
+                    this.started = False
+                    print('game cancelled')
+                    this.reset()
+            
+            
+            if key == 38 or key == 87:
+                pacman.move(1)
+                #up
+                    
+            if key == 39 or key == 68:
+                pacman.move(0)
+                #right
+                    
+            if key == 37 or key == 65:
+                pacman.move(3)
+                #left
+                    
+            if key == 40 or key == 83:
+                pacman.move(2)
+                #ascii
 
  
         
@@ -113,7 +163,6 @@ class Wall:
         this.x_1, this.y_1 = x_1, y_1
         this.x_2, this.y_2 = x_2, y_2
         this.color = color
-        this.draw()
 
     def cross(this, x = 0, y = 0):
         if x >= this.x_1 and x < this.x_2 and y >= this.y_1 and y < this.y_2:
@@ -188,9 +237,8 @@ class Maze:
             return True
         return False
 
-        
-        
-    def __init__(this):
+    def reset(this):
+        this.objects.clear()
         for i in range(int(N_X * N_Y * density)):
             x = random.randint(2, N_X - 3)
             y = random.randint(1, N_Y - 2)
@@ -207,7 +255,14 @@ class Maze:
             object_i.draw()
 
         print('length =',len(Maze.objects))
-
+        this.n_wall.draw()
+        this.s_wall.draw()
+        this.e_wall.draw()
+        this.w_wall.draw()
+    
+        
+    def __init__(this):
+        this.reset()
 
     def unique(this):
         w_x = -1
@@ -270,10 +325,11 @@ class Maze:
                 continue
         print('end iter =',s)
 
+#===========================================================================
 
 def keypress(event):
     print(event)
-    keys = {37,38,39,40,65,68,87}
+    keys = {37,38,39,40,65,68,87,13,27}
     if event.keycode in keys:
         game.key_listener(event.keycode)
 
@@ -298,16 +354,26 @@ class IntervalTimer():
 
 def timerevent():
     game.timer()
-    pacman.tick()
 
 
-img_c = PhotoImage(file="..\TKinterGame\pacman_c.gif")
-img_o = PhotoImage(file="..\TKinterGame\pacman_o.gif")
+img_c = []
+img_c.append(PhotoImage(file="..\TKinterGame\close_r.gif"))
+img_c.append(PhotoImage(file="..\TKinterGame\close_u.gif"))
+img_c.append(PhotoImage(file="..\TKinterGame\close_d.gif"))
+img_c.append(PhotoImage(file="..\TKinterGame\close_l.gif"))
+
+img_o = []
+img_o.append(PhotoImage(file="..\TKinterGame\open_r.gif"))
+img_o.append(PhotoImage(file="..\TKinterGame\open_u.gif"))
+img_o.append(PhotoImage(file="..\TKinterGame\open_d.gif"))
+img_o.append(PhotoImage(file="..\TKinterGame\open_l.gif"))
         
 maze = Maze()
 pacman = Pac_Man(1, N_Y - 2)
 pacman.draw()
 game = Game()
+
+game.reset()
 
 master.bind('<KeyPress>', keypress)
 
