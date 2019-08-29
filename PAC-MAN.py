@@ -2,29 +2,34 @@ import tkinter as tk
 from tkinter import *
 import random
 import threading
+import time
 
 step = 30
 colors = ['blue', 'green', 'yellow', 'red', 'orange', 'white']
 
-density = 0.3
-
 master = tk.Tk()
-
 screen_width = master.winfo_screenwidth()
 screen_height = master.winfo_screenheight()
-
 N_Y = int(screen_height*0.8/step)
 N_X = int(screen_width*0.8/step)
 
-global img_c,img_o
 
-canvas = tk.Canvas(master, bg='black', height = step*N_Y, width = step*N_X)
 
+#===========================================================================
+#Базовый класс двигающихся\анимированных обьектов
+#===========================================================================
 class Moving_object:
 
     def __init__(this, x = False, y = False):
         this.x, this.y = x,y
 
+    def undraw(this):
+        canvas.create_rectangle((this.x * step, this.y * step), ((this.x + 1) * step, (this.y + 1) * step), fill = 'black')
+        
+
+#===========================================================================
+#Класс активного объекта
+#===========================================================================
 class Pac_Man(Moving_object):
 
     shut = True
@@ -35,6 +40,7 @@ class Pac_Man(Moving_object):
 
     def reset(this):
         this.shut = True
+        this.command = 0
         this.undraw()
         this.x = 1
         this.y = N_Y - 2
@@ -59,83 +65,249 @@ class Pac_Man(Moving_object):
         else:
             canvas.create_image(this.x * step, this.y * step, anchor=NW, image = img_o[this.command])
 
-            
-    def undraw(this):
-        canvas.create_rectangle((this.x * step, this.y * step), ((this.x + 1) * step, (this.y + 1) * step), fill = 'black')
 
     def move(this, command):
-        print(f'command = {command}')
         if command == 0:
-            if maze.found_object(this.x + 1, this.y) == -1 and maze.cross(this.x + 1,this.y) == False:               
+            if maze.found_object(this.x + 1, this.y) == -1 and maze.cross(this.x + 1,this.y) == False and this.x + 1 < N_X:               
                 this.undraw()
                 this.x = this.x + 1
                 this.command = 0
                 this.draw()
             #right
         elif command == 1:
-            if maze.found_object(this.x, this.y - 1) == -1 and maze.cross(this.x, this.y - 1) == False:                
+            if maze.found_object(this.x, this.y - 1) == -1 and maze.cross(this.x, this.y - 1) == False and this.y - 1 > 0:                
                 this.undraw()
                 this.y = this.y - 1
                 this.command = 1
                 this.draw()
             #up
         elif command == 2:
-            if maze.found_object(this.x, this.y + 1) == -1 and maze.cross(this.x, this.y + 1) == False:                
+            if maze.found_object(this.x, this.y + 1) == -1 and maze.cross(this.x, this.y + 1) == False and this.y + 1 < N_Y:                
                 this.undraw()
                 this.y = this.y + 1
                 this.command = 2
                 this.draw()
             #down
         elif command == 3:
-            if maze.found_object(this.x - 1, this.y) == -1 and maze.cross(this.x - 1,this.y) == False:               
+            if maze.found_object(this.x - 1, this.y) == -1 and maze.cross(this.x - 1,this.y) == False and this.x - 1 > 0:               
                 this.undraw()
                 this.x = this.x - 1
                 this.command = 3
                 this.draw()
             #left
+        coins.check()
+        frags.check()
+
+
+#===========================================================================
+#Классы призовых монет
+#===========================================================================
+class Coin(Moving_object):
+
+    state = 0
     
+    def __init__(this, x = False, y = False):
+        super().__init__(x, y)
+        this.draw()
+        
+    def draw(this):
+        canvas.create_image(this.x * step, this.y * step, anchor=NW, image = img_coin[this.state])
+
+    def tick(this):
+        this.undraw()
+        this.state += 1;
+        if this.state > 3:
+            this.state = 0
+        this.draw()
+
+
+class Coins:
+
+    bank = []
+    amount = 10
+
+    def __init__(this):
+        this.reset()
+
+    def check(this):
+        i = 0
+        while i < len(this.bank):
+            if pacman.x == this.bank[i].x and pacman.y == this.bank[i].y:
+                this.bank[i].undraw()
+                this.bank.pop(i)
+                game.score += 1
+                game.update()
+            i += 1    
+        
+
+    def tick(this):
+        for c in this.bank:
+            c.tick()
+        this.check()    
+                
+
+    
+    def reset(this):
+        i = 0
+        this.bank.clear()
+        while i < this.amount:
+            x = random.randint(2, N_X - 3)
+            y = random.randint(1, N_Y - 2)
+            if maze.found_object(x,y) == -1:
+                Coins.bank.append(Coin(x,y))
+                i += 1
+        
+#===========================================================================
+#Классы активных врагов
+#===========================================================================
+class Frag(Moving_object):
+
+    state = 0
+    
+    def __init__(this, x = False, y = False):
+        super().__init__(x, y)
+        this.draw()
+        
+    def draw(this):
+        canvas.create_image(this.x * step, this.y * step, anchor=NW, image = img_frag[this.state])
+
+    def try_move(this):
+        x = random.randint(-1, 1)
+        if x == 0:
+            y = random.randint(-1, 1)
+        else:
+            y = 0
+        x = this.x + x
+        y = this.y + y     
+        if maze.found_object(x,y) == -1 and maze.cross(x,y) == False:
+            this.x = x
+            this.y = y
+        
+
+    def tick(this):
+        this.undraw()
+        this.try_move()
+        this.state += 1;
+        if this.state > 3:
+            this.state = 0
+        this.draw()
+
+
+class Frags:
+
+    zoo = []
+    amount = 10
+
+    def __init__(this):
+        this.reset()
+
+    def check(this):
+        i = 0
+        while i < len(Frags.zoo):
+            if pacman.x == Frags.zoo[i].x and pacman.y == Frags.zoo[i].y:
+                game.over()
+            i += 1    
+        
+
+    def tick(this):
+        for f in this.zoo:
+            f.tick()
+        this.check()    
+                
+
+    
+    def reset(this):
+        i = 0
+        this.zoo.clear()
+        while i < this.amount:
+            x = random.randint(2, N_X - 3)
+            y = random.randint(1, N_Y - 2)
+            if maze.found_object(x,y) == -1:
+                Frags.zoo.append(Frag(x,y))
+                i += 1
+
+
+#===========================================================================
+#Основной геймплей
+#===========================================================================
 class Game:
 
     started = False
+    blocked = True
     level = 1
     score = 0
+    
 
     def __init__(this):
         pass
 
-    def reset(this):
-        t = canvas.create_text(int(N_X*step/2),0,fill='red',font='Arial 20',anchor=NE, text=f'Level {this.level}  ')
+    def welcome(this):
+        this.blocked = True
+        canvas.update()
+        canvas.create_rectangle( (int(N_X * step / 8*3), int(N_Y * step / 8*3) ), (int(N_X * step / 8*5), int(N_Y * step / 8*5) ), fill = 'black', outline = 'green')
+        t = canvas.create_text(int(N_X * step / 2), int(N_Y * step / 2), fill='green', font='Arial 20', width=int(N_X * step / 8*2),text = 'Press Enter to start')
         print(canvas.bbox(t))
-        t = canvas.create_text(int(N_X*step/2),0,fill='red',font='Arial 20',anchor=NW, text=f'Score {this.score}  ')
+        
+
+    def update(this):
+        maze.n_wall.draw()
+        t = canvas.create_text(int(N_X * step / 2), 0, fill='yellow', font='Arial 20', anchor = NE, text = f'Level: {this.level} ')
         print(canvas.bbox(t))
-    
-    def next_level(this):
+        t = canvas.create_text(int(N_X * step / 2), 0, fill='yellow', font='Arial 20', anchor = NW, text = f'Score: {this.score} ')
+        print(canvas.bbox(t))
+
+    def over(this):
         this.started = False
-        #увеличить параметры уровня
-        this.level += 1
+        this.blocked = True
+        pacman.undraw()
+        canvas.create_rectangle( (int(N_X * step / 8*3), int(N_Y * step / 8*3) ), (int(N_X * step / 8*5), int(N_Y * step / 8*5) ), fill = 'black', outline = 'red')
+        t = canvas.create_text(int(N_X * step / 2), int(N_Y * step / 2), fill='red', font='Arial 32', width=int(N_X * step / 8*2),text = 'Game Over!')
+        print(canvas.bbox(t))
+
+        this.level = 1
+        this.score = 0
+        coins.amount = 10
+        frags.amount = 10
+        
+          
+    def setup_level(this):
         canvas.create_rectangle((0,0), (N_X * step, N_Y * step), fill = 'black') 
         maze.reset()
         pacman.reset()
-        this.reset()
+        coins.reset()
+        frags.reset()
+        this.update()
+
+    
+    def next_level(this):
+        this.started = False
+        this.level += 1
+        coins.amount += 2
+        frags.amount += 2
+        this.welcome()
     
     def timer(this):
-        if this.started:
-            pacman.tick()
+        if not this.blocked:
+            if this.started:
+                coins.tick()
+                frags.tick()
+                pacman.tick()                
           
 
     def key_listener(this,key):
 
+        if this.blocked:
+            this.blocked = False
+            this.setup_level()
+
         if key == 13:
             if not this.started:
                 this.started = True
-                print('game started')
 
         if this.started: 
             if key == 27:
                 if this.started:
                     this.started = False
-                    print('game cancelled')
-                    this.reset()
             
             
             if key == 38 or key == 87:
@@ -156,7 +328,9 @@ class Game:
 
  
         
-
+#===========================================================================
+#Базовый класс статических стен 
+#===========================================================================
 class Wall:
     
     def __init__(this, x_1 = False, y_1 = False, x_2 = False, y_2 = False, color = 'blue'):
@@ -192,7 +366,9 @@ class W_wall(Wall):
 
 
         
-
+#===========================================================================
+#Классы случайных стен (препятствий)
+#===========================================================================
 class Random_wall:
    
     def __init__(this, x = False, y = False, color = 'blue'):
@@ -205,6 +381,8 @@ class Random_wall:
 
 
 class Maze:
+
+    density = 0.3
 
     objects = []
     n_wall = N_wall()
@@ -239,22 +417,17 @@ class Maze:
 
     def reset(this):
         this.objects.clear()
-        for i in range(int(N_X * N_Y * density)):
+        for i in range(int(N_X * N_Y * this.density)):
             x = random.randint(2, N_X - 3)
             y = random.randint(1, N_Y - 2)
-            Maze.objects.append(Random_wall(x, y))
+            if this.found_object(x,y) == -1:
+               Maze.objects.append(Random_wall(x, y))
         
-        Maze.objects.sort(key=lambda Random_wall: Random_wall.x+Random_wall.y*N_X )
-           
-        this.unique()
-
         this.checking()        
         
         for object_i in Maze.objects:
-#            print(object_i.x,object_i.y)
             object_i.draw()
 
-        print('length =',len(Maze.objects))
         this.n_wall.draw()
         this.s_wall.draw()
         this.e_wall.draw()
@@ -264,18 +437,6 @@ class Maze:
     def __init__(this):
         this.reset()
 
-    def unique(this):
-        w_x = -1
-        w_y = -1
-        i = 0
-        while i < len(Maze.objects):
-            if Maze.objects[i].x == w_x and Maze.objects[i].y == w_y:
-                Maze.objects.pop(i)
-            else:
-                w_x = Maze.objects[i].x
-                w_y = Maze.objects[i].y
-                i += 1
-            
 
     def checking(this):
         t_x = 1
@@ -303,11 +464,6 @@ class Maze:
                 p_y = t_y                
                 t_y = t_y + 1
                 continue
-#            if this.found_object(t_x-1, t_y) == -1 and this.cross(t_x-1,t_y) == False and t_x - 1 != p_x:
- #               p_x = t_x
-  #              p_y = t_y                
-   #             t_x = t_x - 1
-    #            continue
             elif this.try_break(t_x +1, t_y) == True:
                 p_x = t_x
                 p_y = t_y                
@@ -323,17 +479,18 @@ class Maze:
                 p_y = t_y
                 t_y = t_y + 1
                 continue
-        print('end iter =',s)
 
 #===========================================================================
-
+#Обработчик нажатий клавиатуры
+#===========================================================================
 def keypress(event):
-    print(event)
     keys = {37,38,39,40,65,68,87,13,27}
     if event.keycode in keys:
         game.key_listener(event.keycode)
 
-
+#===========================================================================
+#Вспомогательный класс интервальных событий
+#===========================================================================
 class IntervalTimer():
     def __init__(self,I,hFunc):
         self.I = I
@@ -355,6 +512,11 @@ class IntervalTimer():
 def timerevent():
     game.timer()
 
+#===========================================================================
+#Основной код программы
+#===========================================================================
+
+canvas = tk.Canvas(master, bg='black', height = step*N_Y, width = step*N_X)
 
 img_c = []
 img_c.append(PhotoImage(file="..\TKinterGame\close_r.gif"))
@@ -367,13 +529,31 @@ img_o.append(PhotoImage(file="..\TKinterGame\open_r.gif"))
 img_o.append(PhotoImage(file="..\TKinterGame\open_u.gif"))
 img_o.append(PhotoImage(file="..\TKinterGame\open_d.gif"))
 img_o.append(PhotoImage(file="..\TKinterGame\open_l.gif"))
+
+
+img_coin = []
+img_coin.append(PhotoImage(file="..\TKinterGame\coin_r.gif"))
+img_coin.append(PhotoImage(file="..\TKinterGame\coin_d.gif"))
+img_coin.append(PhotoImage(file="..\TKinterGame\coin_l.gif"))
+img_coin.append(PhotoImage(file="..\TKinterGame\coin_u.gif"))
+
+img_frag = []
+img_frag.append(PhotoImage(file="..\TKinterGame\omg_r.gif"))
+img_frag.append(PhotoImage(file="..\TKinterGame\omg_d.gif"))
+img_frag.append(PhotoImage(file="..\TKinterGame\omg_l.gif"))
+img_frag.append(PhotoImage(file="..\TKinterGame\omg_u.gif"))
+
+
         
 maze = Maze()
 pacman = Pac_Man(1, N_Y - 2)
 pacman.draw()
 game = Game()
+coins = Coins()
+frags = Frags()
 
-game.reset()
+game.update()
+game.welcome()
 
 master.bind('<KeyPress>', keypress)
 
@@ -383,4 +563,3 @@ timer.start()
 canvas.pack()
 master.mainloop()
 timer.stop()
-
